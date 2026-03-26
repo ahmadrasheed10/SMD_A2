@@ -95,6 +95,15 @@ public class TicketSummaryActivity extends AppCompatActivity {
         int grandTotal = ticketTotal + snacksTotal;
         txtGrandTotal.setText("TOTAL                         RS " + grandTotal);
 
+        android.content.SharedPreferences sharedPreferences = getSharedPreferences("BookingPrefs", MODE_PRIVATE);
+        android.content.SharedPreferences.Editor editor = sharedPreferences.edit();
+        if (movie != null) {
+            editor.putString("LastMovie", movie);
+            editor.putInt("LastSeats", seatsList != null ? seatsList.size() : 0);
+            editor.putInt("LastTotalPrice", grandTotal);
+            editor.apply();
+        }
+
         findViewById(R.id.btnSend).setOnClickListener(v -> sendTicket(grandTotal, date, time));
     }
 

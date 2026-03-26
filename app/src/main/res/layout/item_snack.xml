@@ -77,5 +77,6 @@
                 android:insetBottom="0dp"
                 style="@style/Widget.AppCompat.Button" />
         </LinearLayout>
+        </LinearLayout>
     </LinearLayout>
 </FrameLayout>
