@@ -2,52 +2,67 @@ package com.example.myapplication;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.TextView;
+import android.widget.Toast;
 
-import androidx.appcompat.app.AppCompatActivity;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
+import androidx.fragment.app.Fragment;
 
 import java.util.ArrayList;
 
-public class SeatSelectionActivity extends AppCompatActivity {
+public class SeatSelectionFragment extends Fragment {
 
     private final int PRICE = 500;
 
     private ArrayList<String> selectedSeats = new ArrayList<>();
-
     private ArrayList<String> bookedSeats = new ArrayList<>();
 
     TextView txtSelected;
     Button btnSnacks, btnBook;
 
     String movie;
+    boolean isComingSoon;
+    String trailerUrl;
 
+    @Nullable
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_seat_selection);
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.fragment_seat_selection, container, false);
 
-        movie = getIntent().getStringExtra("movie");
+        if (getArguments() != null) {
+            movie = getArguments().getString("movie");
+            isComingSoon = getArguments().getBoolean("isComingSoon", false);
+            trailerUrl = getArguments().getString("trailerUrl");
+        }
 
         bookedSeats.add("A2");
         bookedSeats.add("B3");
         bookedSeats.add("C4");
         bookedSeats.add("D1");
 
-        txtSelected = findViewById(R.id.txtSelected);
-        btnSnacks = findViewById(R.id.btnSnacks);
-        btnBook = findViewById(R.id.btnBook);
-        TextView txtMovieName = findViewById(R.id.txtMovieName);
-        ImageButton btnBack = findViewById(R.id.btnBack);
+        txtSelected = view.findViewById(R.id.txtSelected);
+        btnSnacks = view.findViewById(R.id.btnSnacks);
+        btnBook = view.findViewById(R.id.btnBook);
+        TextView txtMovieName = view.findViewById(R.id.txtMovieName);
+        ImageButton btnBack = view.findViewById(R.id.btnBack);
 
-        btnBack.setOnClickListener(v -> finish());
+        btnBack.setOnClickListener(v -> {
+            if (getActivity() != null) {
+                getActivity().getSupportFragmentManager().popBackStack();
+            }
+        });
 
         btnBook.setEnabled(false);
         btnSnacks.setEnabled(false);
 
-        movie = getIntent().getStringExtra("movie");
         if (movie != null)
             txtMovieName.setText(movie);
 
@@ -60,17 +75,14 @@ public class SeatSelectionActivity extends AppCompatActivity {
                 R.id.seat31, R.id.seat32, R.id.seat33, R.id.seat34, R.id.seat35, R.id.seat36
         };
 
-        boolean isComingSoon = getIntent().getBooleanExtra("isComingSoon", false);
-        String trailerUrl = getIntent().getStringExtra("trailerUrl");
-
         if (isComingSoon) {
             btnBook.setText("Coming Soon");
             btnBook.setEnabled(false);
             btnBook.setClickable(false);
-            
+
             btnSnacks.setText("Watch Trailer");
             btnSnacks.setEnabled(true);
-            btnSnacks.setBackgroundTintList(ContextCompat.getColorStateList(this, R.color.seat_selected));
+            btnSnacks.setBackgroundTintList(ContextCompat.getColorStateList(requireContext(), R.color.seat_selected));
             btnSnacks.setOnClickListener(v -> {
                 if (trailerUrl != null) {
                     Intent intent = new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(trailerUrl));
@@ -79,33 +91,23 @@ public class SeatSelectionActivity extends AppCompatActivity {
             });
         } else {
             btnBook.setOnClickListener(v -> {
-                android.widget.Toast.makeText(this, "Booking Confirmed!", android.widget.Toast.LENGTH_SHORT).show();
-                Intent intent = new Intent(this, TicketSummaryActivity.class);
-                intent.putExtra("movie", movie);
-                intent.putExtra("ticketTotal", selectedSeats.size() * PRICE);
-                intent.putExtra("snacksTotal", 0);
-                intent.putStringArrayListExtra("seatsList", selectedSeats);
-                startActivity(intent);
+                Toast.makeText(requireContext(), "Booking Confirmed!", Toast.LENGTH_SHORT).show();
+                if (getActivity() instanceof MainActivity) {
+                    ((MainActivity) getActivity()).navigateToTicketSummary(
+                            movie, selectedSeats, selectedSeats.size() * PRICE, 0);
+                }
             });
 
             btnSnacks.setOnClickListener(v -> {
-                SnacksFragment snacksFragment = new SnacksFragment();
-                Bundle bundle = new Bundle();
-                bundle.putString("movie", movie);
-                bundle.putStringArrayList("seatsList", selectedSeats);
-                bundle.putInt("ticketTotal", selectedSeats.size() * PRICE);
-                bundle.putInt("seats", selectedSeats.size());
-                snacksFragment.setArguments(bundle);
-                
-                getSupportFragmentManager().beginTransaction()
-                        .replace(android.R.id.content, snacksFragment)
-                        .addToBackStack(null)
-                        .commit();
+                if (getActivity() instanceof MainActivity) {
+                    ((MainActivity) getActivity()).navigateToSnacks(
+                            movie, selectedSeats, selectedSeats.size() * PRICE, selectedSeats.size());
+                }
             });
         }
 
         for (int i = 0; i < seats.length; i++) {
-            Button seat = findViewById(seats[i]);
+            Button seat = view.findViewById(seats[i]);
             String label = "" + (char)('A' + (i / 6)) + ((i % 6) + 1);
             seat.setText(label);
 
@@ -115,15 +117,15 @@ public class SeatSelectionActivity extends AppCompatActivity {
             } else {
                 if (bookedSeats.contains(label)) {
                     seat.setEnabled(false);
-                    seat.setBackgroundTintList(ContextCompat.getColorStateList(this, R.color.seat_booked));
+                    seat.setBackgroundTintList(ContextCompat.getColorStateList(requireContext(), R.color.seat_booked));
                 } else {
                     seat.setOnClickListener(v -> toggleSeat(seat, label));
                 }
             }
         }
-    }
 
-        // Removed getSeatLabel since it is no longer needed
+        return view;
+    }
 
     private void toggleSeat(Button seat, String label) {
 
@@ -131,7 +133,7 @@ public class SeatSelectionActivity extends AppCompatActivity {
 
             seat.setSelected(false);
             seat.setBackgroundTintList(
-                    ContextCompat.getColorStateList(this, R.color.seat_available));
+                    ContextCompat.getColorStateList(requireContext(), R.color.seat_available));
 
             selectedSeats.remove(label);
 
@@ -139,7 +141,7 @@ public class SeatSelectionActivity extends AppCompatActivity {
 
             seat.setSelected(true);
             seat.setBackgroundTintList(
-                    ContextCompat.getColorStateList(this, R.color.seat_selected));
+                    ContextCompat.getColorStateList(requireContext(), R.color.seat_selected));
 
             selectedSeats.add(label);
         }
@@ -157,10 +159,10 @@ public class SeatSelectionActivity extends AppCompatActivity {
             btnSnacks.setEnabled(true);
 
             btnBook.setBackgroundTintList(
-                    ContextCompat.getColorStateList(this, R.color.seat_booked));
+                    ContextCompat.getColorStateList(requireContext(), R.color.seat_booked));
 
             btnSnacks.setBackgroundTintList(
-                    ContextCompat.getColorStateList(this, R.color.seat_selected));
+                    ContextCompat.getColorStateList(requireContext(), R.color.seat_selected));
 
         }
         else {
@@ -169,10 +171,10 @@ public class SeatSelectionActivity extends AppCompatActivity {
             btnSnacks.setEnabled(false);
 
             btnBook.setBackgroundTintList(
-                    ContextCompat.getColorStateList(this, android.R.color.darker_gray));
+                    ContextCompat.getColorStateList(requireContext(), android.R.color.darker_gray));
 
             btnSnacks.setBackgroundTintList(
-                    ContextCompat.getColorStateList(this, android.R.color.darker_gray));
+                    ContextCompat.getColorStateList(requireContext(), android.R.color.darker_gray));
         }
     }
 }

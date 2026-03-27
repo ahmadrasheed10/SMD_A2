@@ -1,6 +1,5 @@
 package com.example.myapplication;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -59,12 +58,9 @@ public class SnacksFragment extends Fragment {
             snacksTotal += snack.getPrice() * snack.getQuantity();
         }
 
-        Intent intent = new Intent(getActivity(), TicketSummaryActivity.class);
-        intent.putExtra("movie", movie);
-        intent.putExtra("seats", seats);
-        intent.putExtra("ticketTotal", ticketTotal);
-        intent.putExtra("snacksTotal", snacksTotal);
-        intent.putStringArrayListExtra("seatsList", seatsList);
-        startActivity(intent);
+        if (getActivity() instanceof MainActivity) {
+            ((MainActivity) getActivity()).navigateToTicketSummary(
+                    movie, seatsList, ticketTotal, snacksTotal);
+        }
     }
 }

@@ -1,8 +1,10 @@
 package com.example.myapplication;
 
-import android.content.Intent;
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.Fragment;
+
+import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -19,10 +21,51 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void navigateToSeatSelection(String movieName, boolean isComingSoon, String trailerUrl) {
-        Intent intent = new Intent(this, SeatSelectionActivity.class);
-        intent.putExtra("movie", movieName);
-        intent.putExtra("isComingSoon", isComingSoon);
-        intent.putExtra("trailerUrl", trailerUrl);
-        startActivity(intent);
+        SeatSelectionFragment fragment = new SeatSelectionFragment();
+        Bundle bundle = new Bundle();
+        bundle.putString("movie", movieName);
+        bundle.putBoolean("isComingSoon", isComingSoon);
+        bundle.putString("trailerUrl", trailerUrl);
+        fragment.setArguments(bundle);
+
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.fragmentContainer, fragment)
+                .addToBackStack(null)
+                .commit();
+    }
+
+    public void navigateToSnacks(String movie, ArrayList<String> seatsList, int ticketTotal, int seats) {
+        SnacksFragment fragment = new SnacksFragment();
+        Bundle bundle = new Bundle();
+        bundle.putString("movie", movie);
+        bundle.putStringArrayList("seatsList", seatsList);
+        bundle.putInt("ticketTotal", ticketTotal);
+        bundle.putInt("seats", seats);
+        fragment.setArguments(bundle);
+
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.fragmentContainer, fragment)
+                .addToBackStack(null)
+                .commit();
+    }
+
+    public void navigateToTicketSummary(String movie, ArrayList<String> seatsList, int ticketTotal, int snacksTotal) {
+        TicketSummaryFragment fragment = new TicketSummaryFragment();
+        Bundle bundle = new Bundle();
+        bundle.putString("movie", movie);
+        bundle.putStringArrayList("seatsList", seatsList);
+        bundle.putInt("ticketTotal", ticketTotal);
+        bundle.putInt("snacksTotal", snacksTotal);
+        fragment.setArguments(bundle);
+
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.fragmentContainer, fragment)
+                .addToBackStack(null)
+                .commit();
+    }
+
+    public void navigateToHome() {
+        getSupportFragmentManager().popBackStack(null,
+                androidx.fragment.app.FragmentManager.POP_BACK_STACK_INCLUSIVE);
     }
 }

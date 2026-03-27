@@ -2,52 +2,59 @@ package com.example.myapplication;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import androidx.appcompat.app.AppCompatActivity;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 
-public class TicketSummaryActivity extends AppCompatActivity {
+public class TicketSummaryFragment extends Fragment {
 
     String movie;
     int ticketTotal;
     int snacksTotal;
     ArrayList<String> seatsList;
 
+    @Nullable
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_ticket_summary);
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.fragment_ticket_summary, container, false);
 
-        movie = getIntent().getStringExtra("movie");
-        ticketTotal = getIntent().getIntExtra("ticketTotal", 0);
-        snacksTotal = getIntent().getIntExtra("snacksTotal", 0);
-        seatsList = getIntent().getStringArrayListExtra("seatsList");
+        if (getArguments() != null) {
+            movie = getArguments().getString("movie");
+            ticketTotal = getArguments().getInt("ticketTotal", 0);
+            snacksTotal = getArguments().getInt("snacksTotal", 0);
+            seatsList = getArguments().getStringArrayList("seatsList");
+        }
 
-        ImageView imgMovie = findViewById(R.id.imgMovie);
-        TextView txtMovie = findViewById(R.id.txtMovie);
-        TextView txtDetails = findViewById(R.id.txtDetails);
-        LinearLayout ticketContainer = findViewById(R.id.ticketContainer);
-        LinearLayout snackContainer = findViewById(R.id.snackContainer);
-        TextView snackTitle = findViewById(R.id.snackTitle);
-        TextView txtGrandTotal = findViewById(R.id.txtGrandTotal);
+        ImageView imgMovie = view.findViewById(R.id.imgMovie);
+        TextView txtMovie = view.findViewById(R.id.txtMovie);
+        TextView txtDetails = view.findViewById(R.id.txtDetails);
+        LinearLayout ticketContainer = view.findViewById(R.id.ticketContainer);
+        LinearLayout snackContainer = view.findViewById(R.id.snackContainer);
+        TextView snackTitle = view.findViewById(R.id.snackTitle);
+        TextView txtGrandTotal = view.findViewById(R.id.txtGrandTotal);
 
         txtMovie.setText(movie);
 
         if (movie != null) {
-            if (movie.equalsIgnoreCase("Oppenheimer")) {
+            if (movie.equalsIgnoreCase("Oppenheimer") || movie.equalsIgnoreCase("The Oppenheimer") || movie.equalsIgnoreCase("Oppenheimer 2")) {
                 imgMovie.setImageResource(R.drawable.oppenheimer);
-            } else if (movie.equalsIgnoreCase("Dr Strange")) {
+            } else if (movie.equalsIgnoreCase("Dr Strange") || movie.equalsIgnoreCase("Dr Strange 3")) {
                 imgMovie.setImageResource(R.drawable.strange);
-            } else if (movie.equalsIgnoreCase("3 Idiots")) {
+            } else if (movie.equalsIgnoreCase("3 Idiots") || movie.equalsIgnoreCase("3 Idiots Returns")) {
                 imgMovie.setImageResource(R.drawable.idiots);
             }
         }
@@ -57,20 +64,19 @@ public class TicketSummaryActivity extends AppCompatActivity {
 
         txtDetails.setText("Stars (90' Mall)  |  Hall 1 \n" + date + "  |  " + time);
 
-        ImageButton btnBack = findViewById(R.id.btnBack);
+        ImageButton btnBack = view.findViewById(R.id.btnBack);
 
         btnBack.setOnClickListener(v -> {
-            Intent intent = new Intent(TicketSummaryActivity.this, OnboardingActivity.class);
-
-            startActivity(intent);
-            finish();
+            if (getActivity() instanceof MainActivity) {
+                ((MainActivity) getActivity()).navigateToHome();
+            }
         });
 
         if (seatsList != null && !seatsList.isEmpty()) {
 
             for (String s : seatsList) {
 
-                TextView row = new TextView(this);
+                TextView row = new TextView(requireContext());
                 row.setTextSize(15);
 
                 row.setText("Row " + s.charAt(0) +
@@ -85,7 +91,7 @@ public class TicketSummaryActivity extends AppCompatActivity {
 
             snackTitle.setVisibility(View.VISIBLE);
 
-            TextView snackRow = new TextView(this);
+            TextView snackRow = new TextView(requireContext());
             snackRow.setTextSize(15);
             snackRow.setText("Snacks Total                         RS " + snacksTotal);
 
@@ -95,7 +101,7 @@ public class TicketSummaryActivity extends AppCompatActivity {
         int grandTotal = ticketTotal + snacksTotal;
         txtGrandTotal.setText("TOTAL                         RS " + grandTotal);
 
-        android.content.SharedPreferences sharedPreferences = getSharedPreferences("BookingPrefs", MODE_PRIVATE);
+        android.content.SharedPreferences sharedPreferences = requireActivity().getSharedPreferences("BookingPrefs", android.content.Context.MODE_PRIVATE);
         android.content.SharedPreferences.Editor editor = sharedPreferences.edit();
         if (movie != null) {
             editor.putString("LastMovie", movie);
@@ -104,18 +110,22 @@ public class TicketSummaryActivity extends AppCompatActivity {
             editor.apply();
         }
 
-        findViewById(R.id.btnSend).setOnClickListener(v -> sendTicket(grandTotal, date, time));
+        view.findViewById(R.id.btnSend).setOnClickListener(v -> sendTicket(grandTotal, date, time));
+
+        return view;
     }
 
-    private void sendTicket(int grandTotal, String date, String time){
+    private void sendTicket(int grandTotal, String date, String time) {
 
         StringBuilder seatText = new StringBuilder();
-        for(String s : seatsList){
-            seatText.append("Row ")
-                    .append(s.charAt(0))
-                    .append(", Seat ")
-                    .append(s.substring(1))
-                    .append("\n");
+        if (seatsList != null) {
+            for (String s : seatsList) {
+                seatText.append("Row ")
+                        .append(s.charAt(0))
+                        .append(", Seat ")
+                        .append(s.substring(1))
+                        .append("\n");
+            }
         }
 
         String message =
@@ -134,8 +144,6 @@ public class TicketSummaryActivity extends AppCompatActivity {
         intent.putExtra(Intent.EXTRA_SUBJECT, "Your CineFAST Ticket");
         intent.putExtra(Intent.EXTRA_TEXT, message);
 
-        startActivity(Intent.createChooser(intent,"Send Ticket Via"));
-
-
+        startActivity(Intent.createChooser(intent, "Send Ticket Via"));
     }
 }
